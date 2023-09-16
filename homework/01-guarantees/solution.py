@@ -82,28 +82,34 @@ class AtLeastOnceSender(Process):
         self._id = proc_id
         self._receiver = receiver_id
         self._not_finished = {}
-        self._finished = set()
+        self._finished = []
+        self._count = 0 
 
     def on_local_message(self, msg: Message, ctx: Context):
         # receive message for delivery from local user
-        message_id = str(uuid.uuid4())
-        if len(message_id) > 50:
-            message_id = message_id[:50]
-        while message_id in self._finished:
-            message_id = str(uuid.uuid4())
-            if len(message_id) > 50:
-                message_id = message_id[:50]
-        self._not_finished[message_id] = msg
-        sender_msg = Message(message_id, [msg._type, msg._data])
+
+        # message_id = str(uuid.uuid4())
+        # if len(message_id) > 50:
+        #     message_id = message_id[:50]
+        # while message_id in self._finished:
+        #     message_id = str(uuid.uuid4())
+        #     if len(message_id) > 50:
+        #         message_id = message_id[:50]
+
+        message_id = self._count
+        self._count += 1
+
+        self._not_finished[str(message_id)] = msg
+        sender_msg = Message(str(message_id), [msg._type, msg._data])
         ctx.send(sender_msg, self._receiver)
-        ctx.set_timer(message_id, 3) 
+        ctx.set_timer(str(message_id), 3) 
 
     def on_message(self, msg: Message, sender: str, ctx: Context):
         # process messages from receiver here
         if msg._type not in self._finished:
             ctx.cancel_timer(msg._type)
             self._not_finished.pop(msg._type)
-            self._finished.add(msg._type)
+            self._finished.append(msg._type)
 
     def on_timer(self, timer_name: str, ctx: Context):
         # process fired timers here
@@ -141,21 +147,26 @@ class ExactlyOnceSender(Process):
         self._id = proc_id
         self._receiver = receiver_id
         self._not_finished = {}
-        self._finished = set()
+        self._finished = []
+        self._count = 0 
 
     def on_local_message(self, msg: Message, ctx: Context):
         # receive message for delivery from local user
-        message_id = str(uuid.uuid4())
-        if len(message_id) > 50:
-            message_id = message_id[:50]
-        while message_id in self._finished:
-            message_id = str(uuid.uuid4())
-            if len(message_id) > 50:
-                message_id = message_id[:50]
-        self._not_finished[message_id] = msg
-        sender_msg = Message(message_id, [msg._type, msg._data])
+        # message_id = str(uuid.uuid4())
+        # if len(message_id) > 50:
+        #     message_id = message_id[:50]
+        # while message_id in self._finished:
+        #     message_id = str(uuid.uuid4())
+        #     if len(message_id) > 50:
+        #         message_id = message_id[:50]
+
+        message_id = self._count
+        self._count += 1
+
+        self._not_finished[str(message_id)] = msg
+        sender_msg = Message(str(message_id), [msg._type, msg._data])
         ctx.send(sender_msg, self._receiver)
-        ctx.set_timer(message_id, 3) 
+        ctx.set_timer(str(message_id), 3) 
         # pass
 
     def on_message(self, msg: Message, sender: str, ctx: Context):
@@ -163,7 +174,7 @@ class ExactlyOnceSender(Process):
         if msg._type not in self._finished:
             ctx.cancel_timer(msg._type)
             self._not_finished.pop(msg._type)
-            self._finished.add(msg._type)
+            self._finished.append(msg._type)
         # pass
 
     def on_timer(self, timer_name: str, ctx: Context):
@@ -209,14 +220,15 @@ class ExactlyOnceOrderedSender(Process):
     def __init__(self, proc_id: str, receiver_id: str):
         self._id = proc_id
         self._receiver = receiver_id
-        self._not_finished = {} 
-        self._finished = set()
+        self._not_finished = {}
+        self._finished = []
         self._count = 0
 
     def on_local_message(self, msg: Message, ctx: Context):
         # receive message for delivery from local user
         message_id = self._count + 1
         self._count += 1
+
         self._not_finished[str(message_id)] = msg
         sender_msg = Message(str(message_id), [msg._type, msg._data])
         ctx.send(sender_msg, self._receiver)
@@ -228,7 +240,7 @@ class ExactlyOnceOrderedSender(Process):
         if msg._type != 'retry' and msg._type not in self._finished:
             ctx.cancel_timer(msg._type)
             self._not_finished.pop(msg._type)
-            self._finished.add(msg._type)
+            self._finished.append(msg._type)
         elif msg._type == 'retry' and msg._data in self._not_finished.keys():
             sender_msg = Message(msg._data, [self._not_finished[msg._data]._type, self._not_finished[msg._data]._data])
             ctx.send(sender_msg, self._receiver)
