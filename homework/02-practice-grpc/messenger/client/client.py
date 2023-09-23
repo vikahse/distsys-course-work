@@ -77,7 +77,6 @@ def messages_stream(stub, postbox):
             d['text'] = message.text
             datetime_object = message.sendTime.ToDatetime()
             d['sendTime'] = datetime_object.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-            print(d)
             postbox.put_message(d)
 
 def main():
