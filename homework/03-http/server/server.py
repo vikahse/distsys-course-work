@@ -140,23 +140,27 @@ class HTTPHandler(StreamRequestHandler):
                         path = pathlib.Path(path)
                         if create_directory:
                             if not os.path.exists(path):
+                                logger.info(1)
                                 os.makedirs(path)
                                 response = b"HTTP/1.1 200 OK\n"
                                 response += b'Content-Type: text/plain\n'
                                 response += b'Server: example\n\n'
                                 response += b'Directory was created\n'
                             else:
+                                logger.info(2)
                                 response = b'HTTP/1.1 409 Conflict\n'
                                 response += b'Content-Type: text/plain\n'
                                 response += b'Server: example\n\n'
                                 response += b'Directory already exists.\n'
                         else:
                             if os.path.isdir(path):
+                                logger.info(3)
                                 response = b'HTTP/1.1 409 Conflict\n'
                                 response += b'Content-Type: text/plain\n'
                                 response += b'Server: example\n\n'
                                 response += b'Directory already exists.\n'
                             elif not os.path.exists(path):
+                                logger.info(4)
                                 cur = filename.split('/')
                                 i = 1
                                 new_path = str(self.server.working_directory)
@@ -191,6 +195,7 @@ class HTTPHandler(StreamRequestHandler):
                                     response += b'Content-Type: application/octet-stream\n'
                                     response += b'Server: example\n\n'
                             else:
+                                logger.info(5)
                                 response = b'HTTP/1.1 409 Conflict\n'
                                 response += b'Content-Type: application/octet-stream\n'
                                 response += b'Server: example\n\n'
