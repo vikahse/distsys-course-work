@@ -161,35 +161,33 @@ class HTTPHandler(StreamRequestHandler):
                                 response += b'Directory already exists.\n'
                             elif not os.path.exists(path):
                                 logger.info(4)
-                                cur = filename.split('/')
-                                i = 1
-                                new_path = str(self.server.working_directory)
-                                while i != len(cur) - 1:
-                                    new_path += '/'
-                                    new_path += cur[i]
-                                    if not os.path.exists(new_path):
-                                        os.makedirs(new_path)
-                                    i += 1                        
                                 try:
+                                    cur = filename.split('/')
+                                    i = 1
+                                    new_path = str(self.server.working_directory)
+                                    while i != len(cur) - 1:
+                                        new_path += '/'
+                                        new_path += cur[i]
+                                        if not os.path.exists(new_path):
+                                            os.makedirs(new_path)
+                                        i += 1  
+
                                     data = b''
                                     data = body
-                                    try:
-                                        with open(path, 'wb') as file:
-                                            file.write(data)
-                                        length = len(data)
-                                        response = b"HTTP/1.1 200 OK\n"
-                                        response += bytes("Content-Length: {}\n".format(length), 'utf-8')
-                                        response += b'Content-Type: application/octet-stream\n'
-                                        response += b'Server: example\n\n'
-                                        response += data
+                                    
+                                    with open(path, 'wb') as file:
+                                        file.write(data)
 
-                                        file.close()
-                                    except Exception as e:
-                                        logger.error(e)
-                                        response = b'HTTP/1.1 400 Bad Request\n'
-                                        response += b'Content-Type: application/octet-stream\n'
-                                        response += b'Server: example\n\n'
+                                    length = len(data)
+                                    response = b"HTTP/1.1 200 OK\n"
+                                    response += bytes("Content-Length: {}\n".format(length), 'utf-8')
+                                    response += b'Content-Type: application/octet-stream\n'
+                                    response += b'Server: example\n\n'
+                                    response += data
+
+                                    file.close()
                                 except Exception as e:
+                                    logger.info(6)
                                     logger.error(e)
                                     response = b'HTTP/1.1 400 Bad Request\n'
                                     response += b'Content-Type: application/octet-stream\n'
