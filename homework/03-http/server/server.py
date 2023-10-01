@@ -162,28 +162,22 @@ class HTTPHandler(StreamRequestHandler):
                             elif not os.path.exists(path):
                                 logger.info(4)
                                 try:
-                                    cur = filename.split('/')
-                                    i = 1
-                                    new_path = str(self.server.working_directory)
-                                    while i != len(cur) - 1:
-                                        new_path += '/'
-                                        new_path += cur[i]
-                                        if not os.path.exists(new_path):
-                                            os.makedirs(new_path)
-                                        i += 1  
-
-                                    data = b''
-                                    data = body
+                                    cur_path = str(self.server.working_directory) + filename
+                                    parsed_path = cur_path.rsplit('/', 1)[0]
+                                    subprocess.run(['mkdir', '-p', parsed_path])
+                                    subprocess.run(['touch', path])
                                     
                                     with open(path, 'wb') as file:
-                                        file.write(data)
-
-                                    length = len(data)
+                                        file.write(body)
+                                        
+                                    logger.info(44)
+                                    
+                                    length = len(body)
                                     response = b"HTTP/1.1 200 OK\n"
                                     response += bytes("Content-Length: {}\n".format(length), 'utf-8')
                                     response += b'Content-Type: application/octet-stream\n'
                                     response += b'Server: example\n\n'
-                                    response += data
+                                    response += body
 
                                     file.close()
                                 except Exception as e:
