@@ -49,6 +49,7 @@ class HTTPHandler(StreamRequestHandler):
         content_length = all_headers.get('Content-Length')
 
         body = b''
+        response = b'HTTP/1.1 400 Bad Request\n\n'
         if content_length != None:
             body = self.rfile.read(int(content_length))
 
@@ -59,11 +60,12 @@ class HTTPHandler(StreamRequestHandler):
             req_line = str(first_line, 'utf-8')
             req_line = req_line.rstrip('\r\n')
             words = req_line.split()           
-            response = b''
+            # response = b''
             if len(words) == 3:
                 command, filename, version = words[0], words[1], words[2]
                 if version != 'HTTP/1.1':
-                    response = b'HTTP/1.1 505 HTTP Version not supported\n\n'
+                    response = b'HTTP/1.1 505 HTTP Version not supported\n'
+                    response += b'Server: example\n\n'
                 else:
                     if command == 'GET':
                         path = str(self.server.working_directory) + filename
@@ -133,7 +135,7 @@ class HTTPHandler(StreamRequestHandler):
                             response += b'Server: example\n\n'
                             response += b'File not found.\n'
                     elif command == 'POST':
-                        response = b''
+                        # response = b''
                         path = str(self.server.working_directory) + filename
                         path = pathlib.Path(path)
                         if create_directory:
@@ -142,6 +144,7 @@ class HTTPHandler(StreamRequestHandler):
                                 response = b"HTTP/1.1 200 OK\n"
                                 response += b'Content-Type: text/plain\n'
                                 response += b'Server: example\n\n'
+                                response += b'Directory was created\n'
                             else:
                                 response = b'HTTP/1.1 409 Conflict\n'
                                 response += b'Content-Type: text/plain\n'
@@ -195,7 +198,7 @@ class HTTPHandler(StreamRequestHandler):
                     elif command == 'PUT':
                         path = str(self.server.working_directory) + filename
                         path = pathlib.Path(path)
-                        response = b''
+                        # response = b''
                         if os.path.isdir(path):
                             response = b'HTTP/1.1 409 Conflict\n'
                             response += b'Content-Type: text/plain\n'
@@ -206,7 +209,8 @@ class HTTPHandler(StreamRequestHandler):
                                 data = b''
                                 data = body
                                 if len(data) != int(content_length):
-                                    response = b"HTTP/1.1 400 Bad Request\n\n"
+                                    response = b"HTTP/1.1 400 Bad Request\n"
+                                    response += b'Server: example\n\n'
                                 else:
                                     try:
                                         with open(path, 'wb') as file:
@@ -222,10 +226,12 @@ class HTTPHandler(StreamRequestHandler):
                                         file.close()
                                     except Exception as e:
                                         logger.error(e)
-                                        response = b'HTTP/1.1 400 Bad Request\n\n'
+                                        response = b'HTTP/1.1 400 Bad Request\n'
+                                        response += b'Server: example\n\n'
                             except Exception as e:
                                 logger.error(e)
-                                response = b'HTTP/1.1 400 Bad Request\n\n'
+                                response = b'HTTP/1.1 400 Bad Request\n'
+                                response += b'Server: example\n\n'
                         elif not os.path.exists(path) and not os.path.isdir(path):
                             response = b'HTTP/1.1 404 Not Found\n'
                             response += b'Server: example\n\n'
@@ -233,7 +239,7 @@ class HTTPHandler(StreamRequestHandler):
                     elif command == 'DELETE':
                         path = str(self.server.working_directory) + filename
                         path = pathlib.Path(path)
-                        response = b''
+                        # response = b''
                         if os.path.isdir(path) and not remove_directory:
                             response = b'HTTP/1.1 406 Not Acceptable\n'
                             response += b'Content-Type: text/plain\n'
@@ -246,7 +252,8 @@ class HTTPHandler(StreamRequestHandler):
                                 response += b'Server: example\n\n'
 
                             except Exception as e:
-                                response = b'HTTP/1.1 400 Bad Request\n\n'
+                                response = b'HTTP/1.1 400 Bad Request\n'
+                                response += b'Server: example\n\n'
                         elif os.path.exists(path):
                             try:
                                 os.remove(path)
@@ -255,7 +262,8 @@ class HTTPHandler(StreamRequestHandler):
                                 response += b'Server: example\n\n'
                             except Exception as e:
                                 logger.error(e)
-                                response = b'HTTP/1.1 400 Bad Request\n\n'
+                                response = b'HTTP/1.1 400 Bad Request\n'
+                                response += b'Server: example\n\n'
                         else:
                             response = b'HTTP/1.1 404 Not Found\n'
                             response += b'Server: example\n\n'
