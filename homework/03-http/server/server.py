@@ -69,7 +69,7 @@ class HTTPHandler(StreamRequestHandler):
                         path = str(self.server.working_directory) + filename
                         path = pathlib.Path(path)
                         if os.path.exists(path) and os.path.isdir(path):
-                            proc = subprocess.Popen(['gls', '-lA', '--time-style=+%Y-%m-%d %H:%M:%S', path], stdout=subprocess.PIPE)
+                            proc = subprocess.Popen(['ls', '-lA', '--time-style=+%Y-%m-%d %H:%M:%S', path], stdout=subprocess.PIPE)
                             with open("data.txt","w") as f:
                                 i = 0
                                 for line in proc.stdout.readlines():
