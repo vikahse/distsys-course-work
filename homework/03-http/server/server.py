@@ -172,13 +172,11 @@ class HTTPHandler(StreamRequestHandler):
                                         
                                     logger.info(44)
                                     
-                                    length = len(body)
                                     response = b"HTTP/1.1 200 OK\n"
-                                    response += bytes("Content-Length: {}\n".format(length), 'utf-8')
-                                    response += b'Content-Type: application/octet-stream\n'
-                                    response += b'Server: example\n\n'
+                                    response += bytes("Content-Length: {}\n".format(len(body)), 'utf-8')
+                                    response += b'Content-Type: application/octet-stream\nServer: example\n\n'
                                     response += body
-
+                                    logger.info(response)
                                     file.close()
                                 except Exception as e:
                                     logger.info(6)
