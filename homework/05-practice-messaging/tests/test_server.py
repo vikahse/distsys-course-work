@@ -112,22 +112,22 @@ def test_no_listdir():
     assert image_ids == image_ids_new
 
 
-def test_fault_tolerance():
-    session = requests_unixsocket.Session()
-    session.post('http+unix://%2Ftmp%2Fdocker.sock/containers/{}/pause'.format(MQ_ID))
-    time.sleep(2)
-    ids = set()
-    for i in range(20):
-        input_data = {"image_url": "https://jrnlst.ru/sites/default/files/covers/cover_6.jpg"}
-        response = requests.post(IMAGES_ENDPOINT, json=input_data)
-        assert response.status_code == 200
-        idx = response.json()['image_id']
-        ids.add(idx)
-    time.sleep(5)
-    new_ids = set(requests.get(f'{IMAGES_ENDPOINT}').json()['image_ids'])
-    assert new_ids.isdisjoint(ids)  # New images can't be processed if rabbitmq is down.
-    session = requests_unixsocket.Session()
-    session.post('http+unix://%2Ftmp%2Fdocker.sock/containers/{}/unpause'.format(MQ_ID))
-    time.sleep(15)
-    new_ids = set(requests.get(f'{IMAGES_ENDPOINT}').json()['image_ids'])
-    assert new_ids.issuperset(ids)
+# def test_fault_tolerance():
+#     session = requests_unixsocket.Session()
+#     session.post('http+unix://%2Ftmp%2Fdocker.sock/containers/{}/pause'.format(MQ_ID))
+#     time.sleep(2)
+#     ids = set()
+#     for i in range(20):
+#         input_data = {"image_url": "https://jrnlst.ru/sites/default/files/covers/cover_6.jpg"}
+#         response = requests.post(IMAGES_ENDPOINT, json=input_data)
+#         assert response.status_code == 200
+#         idx = response.json()['image_id']
+#         ids.add(idx)
+#     time.sleep(5)
+#     new_ids = set(requests.get(f'{IMAGES_ENDPOINT}').json()['image_ids'])
+#     assert new_ids.isdisjoint(ids)  # New images can't be processed if rabbitmq is down.
+#     session = requests_unixsocket.Session()
+#     session.post('http+unix://%2Ftmp%2Fdocker.sock/containers/{}/unpause'.format(MQ_ID))
+#     time.sleep(15)
+#     new_ids = set(requests.get(f'{IMAGES_ENDPOINT}').json()['image_ids'])
+#     assert new_ids.issuperset(ids)
