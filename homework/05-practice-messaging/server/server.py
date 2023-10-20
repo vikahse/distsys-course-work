@@ -61,7 +61,14 @@ class Server:
                 result = body.decode()
                 try:
                     if image_id == result.split('**')[0]:
-                        ans = result.split('**')[1]
+
+                        file_path = f'/data/{image_id}.txt'
+                        with open(file_path, 'rb') as file:
+                            bytes = file.read()
+                            file.close()
+                        ans = bytes.decode()
+                        # print(ans)
+                        # ans = result.split('**')[1]
 
                     bodies.append(body)
                     if ans != None:
@@ -114,4 +121,3 @@ app = create_app()
 if __name__ == '__main__':
     logging.basicConfig()
     app.run(host='0.0.0.0', port=5000)
-  
