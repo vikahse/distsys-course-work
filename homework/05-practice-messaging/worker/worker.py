@@ -26,7 +26,8 @@ if __name__ == '__main__':
                     
             message = id
             message += '**'
-            message += caption
+            message += '-'
+            # message += caption
 
 
             ch.basic_publish(exchange='',
@@ -50,6 +51,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         channel.stop_consuming()
         connection.close()
-
-
-
