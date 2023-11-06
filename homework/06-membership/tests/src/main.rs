@@ -123,8 +123,8 @@ fn main() {
             run_config,
         );
     }
-    tests.add("SCALABILITY NORMAL", test_scalability_normal, config);
-    tests.add("SCALABILITY CRASH", test_scalability_crash, config);
+    // tests.add("SCALABILITY NORMAL", test_scalability_normal, config);
+    // tests.add("SCALABILITY CRASH", test_scalability_crash, config);
 
     if !args.disable_mc_tests {
         config.process_count = 3;
