@@ -210,8 +210,7 @@ class StorageNode(Process):
                 if node_id != self._id:
                     self._data.pop(key)
                     if value != None:
-                        nodes.setdefault(node_id, []).append(
-                            {'key': key, 'value': value})
+                        nodes.setdefault(node_id, []).append({'key': key, 'value': value})
             for node in nodes.keys():
                 new_msg = Message('PUT_STAB', {'data': nodes[node]})
                 ctx.send(new_msg, node)
