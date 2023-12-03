@@ -3,7 +3,7 @@ import hashlib
 from dslabmp import Context, Message, Process
 from typing import List
 import ast
-
+import random
 
 class StorageNode(Process):
     def __init__(self, node_id: str, nodes: List[str]):
@@ -323,11 +323,12 @@ class StorageNode(Process):
                 })
 
                 replicas = list(map(str, get_key_replicas(msg['key'], len(self._nodes))))
-
-                # for i in range(1, len(self.quorum_put[name_key]) - 1):
-                for replica in replicas:
+                # number = random.randint(1, len(replicas) - 1)
+                # for i in range(1, len(self.quorum_put[name_key])):
+                for i in range(len(self.quorum_put[name_key]) - 1):
                     # ctx.send(check, self.quorum_put[name_key][i])
-                    ctx.send(check, replica)
+                    number = random.randint(1, len(replicas) - 1)
+                    ctx.send(check, replicas[number])
 
                 self.quorum_put[name_key] = [-1]
                 
@@ -585,7 +586,7 @@ class StorageNode(Process):
                         values = [self.get_value[0]]
                     elif self.get_value[0] != None:
                         values = self.get_value[0]
-                        
+
                     if str(key).startswith("CART") or str(key).startswith("XCART"):
                         values = [",".join(list(values))]
 
