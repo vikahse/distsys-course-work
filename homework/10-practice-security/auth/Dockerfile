@@ -10,4 +10,3 @@ COPY * .
 RUN go build .
 
 ENTRYPOINT ["./auth"]
-
