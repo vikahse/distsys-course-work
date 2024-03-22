@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -77,13 +79,38 @@ func (h *AuthHandlers) signup(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Error unmarshalling body: %v", err)
 		return
 	}
+	//check if exists
+	_, userExists := h.passwords[creds.Username]
+	if userExists {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "Уже существует пользователь с таким именем")
+		return
+	}
+
+	//register user
+	hash := md5.Sum([]byte(creds.Password + creds.Username))
+	h.passwords[creds.Username] = hash
+
+	//generate jwt token
+
+	token := jwt.New(jwt.GetSigningMethod("RS256"))
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = creds.Username
+	tokenStr, err := token.SignedString(h.jwtPrivate)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// fmt.Println("jwt=", jwt)
 
 	// TODO: register user, check if exists, generate jwt token and cookie
-
 	http.SetCookie(w, &http.Cookie{
 		Name:  "jwt",
-		Value: "TODO", // jwt token string
+		Value: tokenStr, // jwt token string
 	})
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "Пользователь успешно зарегистрирован")
 }
 
 func (h *AuthHandlers) login(w http.ResponseWriter, req *http.Request) {
@@ -112,20 +139,78 @@ func (h *AuthHandlers) login(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// TODO: check if user exists, check password and generate cookie
+	password, userExists := h.passwords[creds.Username]
+	if !userExists {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "Пользователя с таким именем не существует")
+		return
+	}
+	hash := md5.Sum([]byte(creds.Password + creds.Username))
+	if password == hash {
+		token := jwt.New(jwt.GetSigningMethod("RS256"))
 
-	http.SetCookie(w, &http.Cookie{
-		Name:  "jwt",
-		Value: "TODO", // jwt token string
-	})
+		claims := token.Claims.(jwt.MapClaims)
+		claims["username"] = creds.Username
+
+		tokenStr, err := token.SignedString(h.jwtPrivate)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  "jwt",
+			Value: tokenStr, // jwt token string
+		})
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Успешная авторизация")
+	} else {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "Неверный пароль")
+		return
+	}
+
+	// TODO: check if user exists, check password and generate cookie
 }
 
 func (h *AuthHandlers) whoami(w http.ResponseWriter, req *http.Request) {
-	username := "TODO" // TODO: get username from jwt token
+	cookie, err := req.Cookie("jwt")
+	if err != nil { //пустой
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
-	// TODO: check if user exists
+	tokenString := cookie.Value
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return h.jwtPrivate, nil
+	})
 
-	w.Write([]byte("Hello, " + username))
+	if err != nil && token == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		username := claims["username"].(string)
+		_, userExists := h.passwords[username]
+		if !userExists {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Write([]byte("Hello, " + username))
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 }
 
 func main() {

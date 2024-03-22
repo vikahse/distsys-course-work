@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"errors"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -68,10 +70,46 @@ func (h *KVHandlers) put(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Error unmarshalling body: %v", err)
 		return
 	}
+
+	cookie, err := req.Cookie("jwt")
+	if err != nil { //если куки нет
+		w.WriteHeader(401)
+		return
+	}
+	tokenString := cookie.Value
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte("private"), nil
+	})
+
+	if err != nil && token == nil {
+		w.WriteHeader(400)
+		return
+	}
+
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		w.WriteHeader(400)
+		return
+	}
+
+	username := "TODO"
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		username = claims["username"].(string)
+	}
+
 	if _, ok = h.kv[key]; !ok {
 		h.kv[key] = make(map[string]string)
+		h.kv[key]["user"] = username
+	} else {
+		if h.kv[key]["user"] != username {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 	}
 	h.kv[key]["value"] = value
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *KVHandlers) get(w http.ResponseWriter, req *http.Request) {
@@ -80,6 +118,35 @@ func (h *KVHandlers) get(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "get can be done only with GET or POST HTTP method")
 		return
 	}
+	//
+	cookie, err := req.Cookie("jwt")
+	if err != nil { //если куки нет
+		w.WriteHeader(401)
+		return
+	}
+	tokenString := cookie.Value
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte("private"), nil
+	})
+
+	if err != nil && token == nil {
+		w.WriteHeader(400)
+		return
+	}
+
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		w.WriteHeader(400)
+		return
+	}
+
+	username := "TODO"
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		username = claims["username"].(string)
+	}
+
 	queryParams := req.URL.Query()
 	if !queryParams.Has("key") || len(queryParams["key"]) != 1 {
 		w.WriteHeader(http.StatusBadRequest)
@@ -100,6 +167,12 @@ func (h *KVHandlers) get(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "kv data does not have 'value' key somehow")
 		return
 	}
+
+	if h.kv[key]["user"] != username {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	resp := make(map[string]string)
 	resp["value"] = value
 	respJson, err := json.Marshal(resp)
